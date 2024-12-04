@@ -64,9 +64,24 @@ func main() {
 		printEvent(e)
 	}
 
-	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID()})
+	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: []byte(`{"name":"x"}`)})
 	if err != nil {
 		log.Fatalf("could not update event: %v", err)
+	}
+
+	s, err = c.FindEvents(ctx, &rpc.FindEventsParams{Props: []byte(`{"name":"x"}`)})
+	if err != nil {
+		log.Fatalf("could not find events: %v", err)
+	}
+	for {
+		e, err := s.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("stream.Recv failed: %v", err)
+		}
+		printEvent(e)
 	}
 
 	_, err = c.DeleteEvent(ctx, &rpc.DeleteEventParams{ID: e.GetID()})

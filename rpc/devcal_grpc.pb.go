@@ -23,6 +23,7 @@ const (
 	EventsService_InsertEvent_FullMethodName = "/devcal.EventsService/InsertEvent"
 	EventsService_GetEvent_FullMethodName    = "/devcal.EventsService/GetEvent"
 	EventsService_ListEvents_FullMethodName  = "/devcal.EventsService/ListEvents"
+	EventsService_FindEvents_FullMethodName  = "/devcal.EventsService/FindEvents"
 	EventsService_UpdateEvent_FullMethodName = "/devcal.EventsService/UpdateEvent"
 	EventsService_DeleteEvent_FullMethodName = "/devcal.EventsService/DeleteEvent"
 )
@@ -34,6 +35,7 @@ type EventsServiceClient interface {
 	InsertEvent(ctx context.Context, in *InsertEventParams, opts ...grpc.CallOption) (*Event, error)
 	GetEvent(ctx context.Context, in *GetEventParams, opts ...grpc.CallOption) (*Event, error)
 	ListEvents(ctx context.Context, in *ListEventsParams, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error)
+	FindEvents(ctx context.Context, in *FindEventsParams, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error)
 	UpdateEvent(ctx context.Context, in *UpdateEventParams, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteEvent(ctx context.Context, in *DeleteEventParams, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -85,6 +87,25 @@ func (c *eventsServiceClient) ListEvents(ctx context.Context, in *ListEventsPara
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EventsService_ListEventsClient = grpc.ServerStreamingClient[Event]
 
+func (c *eventsServiceClient) FindEvents(ctx context.Context, in *FindEventsParams, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EventsService_ServiceDesc.Streams[1], EventsService_FindEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[FindEventsParams, Event]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EventsService_FindEventsClient = grpc.ServerStreamingClient[Event]
+
 func (c *eventsServiceClient) UpdateEvent(ctx context.Context, in *UpdateEventParams, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -112,6 +133,7 @@ type EventsServiceServer interface {
 	InsertEvent(context.Context, *InsertEventParams) (*Event, error)
 	GetEvent(context.Context, *GetEventParams) (*Event, error)
 	ListEvents(*ListEventsParams, grpc.ServerStreamingServer[Event]) error
+	FindEvents(*FindEventsParams, grpc.ServerStreamingServer[Event]) error
 	UpdateEvent(context.Context, *UpdateEventParams) (*emptypb.Empty, error)
 	DeleteEvent(context.Context, *DeleteEventParams) (*emptypb.Empty, error)
 	mustEmbedUnimplementedEventsServiceServer()
@@ -132,6 +154,9 @@ func (UnimplementedEventsServiceServer) GetEvent(context.Context, *GetEventParam
 }
 func (UnimplementedEventsServiceServer) ListEvents(*ListEventsParams, grpc.ServerStreamingServer[Event]) error {
 	return status.Errorf(codes.Unimplemented, "method ListEvents not implemented")
+}
+func (UnimplementedEventsServiceServer) FindEvents(*FindEventsParams, grpc.ServerStreamingServer[Event]) error {
+	return status.Errorf(codes.Unimplemented, "method FindEvents not implemented")
 }
 func (UnimplementedEventsServiceServer) UpdateEvent(context.Context, *UpdateEventParams) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateEvent not implemented")
@@ -207,6 +232,17 @@ func _EventsService_ListEvents_Handler(srv interface{}, stream grpc.ServerStream
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EventsService_ListEventsServer = grpc.ServerStreamingServer[Event]
 
+func _EventsService_FindEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(FindEventsParams)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EventsServiceServer).FindEvents(m, &grpc.GenericServerStream[FindEventsParams, Event]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EventsService_FindEventsServer = grpc.ServerStreamingServer[Event]
+
 func _EventsService_UpdateEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateEventParams)
 	if err := dec(in); err != nil {
@@ -271,6 +307,11 @@ var EventsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ListEvents",
 			Handler:       _EventsService_ListEvents_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "FindEvents",
+			Handler:       _EventsService_FindEvents_Handler,
 			ServerStreams: true,
 		},
 	},

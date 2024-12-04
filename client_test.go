@@ -69,6 +69,22 @@ func TestNewWithInsecureCredentials(t *testing.T) {
 		t.Fatalf("could not update event: %v", err)
 	}
 
+	s, err = c.FindEvents(ctx, &rpc.FindEventsParams{Props: []byte(`{"name":"x"}`)})
+	if err != nil {
+		t.Fatalf("could not find events: %v", err)
+	}
+	for {
+		e, err := s.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("stream.Recv failed: %v", err)
+		}
+		log.Println("Event", e)
+		log.Println("---")
+	}
+
 	e, err = c.GetEvent(ctx, &rpc.GetEventParams{ID: e.GetID()})
 	if err != nil {
 		t.Fatalf("could not get event: %v", err)
