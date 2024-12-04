@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,6 +23,8 @@ const (
 	EventsService_InsertEvent_FullMethodName = "/devcal.EventsService/InsertEvent"
 	EventsService_GetEvent_FullMethodName    = "/devcal.EventsService/GetEvent"
 	EventsService_ListEvents_FullMethodName  = "/devcal.EventsService/ListEvents"
+	EventsService_UpdateEvent_FullMethodName = "/devcal.EventsService/UpdateEvent"
+	EventsService_DeleteEvent_FullMethodName = "/devcal.EventsService/DeleteEvent"
 )
 
 // EventsServiceClient is the client API for EventsService service.
@@ -31,6 +34,8 @@ type EventsServiceClient interface {
 	InsertEvent(ctx context.Context, in *InsertEventParams, opts ...grpc.CallOption) (*Event, error)
 	GetEvent(ctx context.Context, in *GetEventParams, opts ...grpc.CallOption) (*Event, error)
 	ListEvents(ctx context.Context, in *ListEventsParams, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Event], error)
+	UpdateEvent(ctx context.Context, in *UpdateEventParams, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteEvent(ctx context.Context, in *DeleteEventParams, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type eventsServiceClient struct {
@@ -80,6 +85,26 @@ func (c *eventsServiceClient) ListEvents(ctx context.Context, in *ListEventsPara
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EventsService_ListEventsClient = grpc.ServerStreamingClient[Event]
 
+func (c *eventsServiceClient) UpdateEvent(ctx context.Context, in *UpdateEventParams, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, EventsService_UpdateEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *eventsServiceClient) DeleteEvent(ctx context.Context, in *DeleteEventParams, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, EventsService_DeleteEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EventsServiceServer is the server API for EventsService service.
 // All implementations must embed UnimplementedEventsServiceServer
 // for forward compatibility.
@@ -87,6 +112,8 @@ type EventsServiceServer interface {
 	InsertEvent(context.Context, *InsertEventParams) (*Event, error)
 	GetEvent(context.Context, *GetEventParams) (*Event, error)
 	ListEvents(*ListEventsParams, grpc.ServerStreamingServer[Event]) error
+	UpdateEvent(context.Context, *UpdateEventParams) (*emptypb.Empty, error)
+	DeleteEvent(context.Context, *DeleteEventParams) (*emptypb.Empty, error)
 	mustEmbedUnimplementedEventsServiceServer()
 }
 
@@ -105,6 +132,12 @@ func (UnimplementedEventsServiceServer) GetEvent(context.Context, *GetEventParam
 }
 func (UnimplementedEventsServiceServer) ListEvents(*ListEventsParams, grpc.ServerStreamingServer[Event]) error {
 	return status.Errorf(codes.Unimplemented, "method ListEvents not implemented")
+}
+func (UnimplementedEventsServiceServer) UpdateEvent(context.Context, *UpdateEventParams) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateEvent not implemented")
+}
+func (UnimplementedEventsServiceServer) DeleteEvent(context.Context, *DeleteEventParams) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteEvent not implemented")
 }
 func (UnimplementedEventsServiceServer) mustEmbedUnimplementedEventsServiceServer() {}
 func (UnimplementedEventsServiceServer) testEmbeddedByValue()                       {}
@@ -174,6 +207,42 @@ func _EventsService_ListEvents_Handler(srv interface{}, stream grpc.ServerStream
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EventsService_ListEventsServer = grpc.ServerStreamingServer[Event]
 
+func _EventsService_UpdateEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateEventParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventsServiceServer).UpdateEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EventsService_UpdateEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventsServiceServer).UpdateEvent(ctx, req.(*UpdateEventParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _EventsService_DeleteEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteEventParams)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EventsServiceServer).DeleteEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EventsService_DeleteEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EventsServiceServer).DeleteEvent(ctx, req.(*DeleteEventParams))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EventsService_ServiceDesc is the grpc.ServiceDesc for EventsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -188,6 +257,14 @@ var EventsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEvent",
 			Handler:    _EventsService_GetEvent_Handler,
+		},
+		{
+			MethodName: "UpdateEvent",
+			Handler:    _EventsService_UpdateEvent_Handler,
+		},
+		{
+			MethodName: "DeleteEvent",
+			Handler:    _EventsService_DeleteEvent_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

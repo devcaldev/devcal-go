@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/devcaldev/devcal-go/rpc"
 )
@@ -38,14 +39,25 @@ type Client interface {
 	Close() error
 }
 
-func New(addr string, apiKey string) (Client, error) {
-	opts := []grpc.DialOption{
+func New(addr, apiKey string) (Client, error) {
+	return NewWithOptions(
+		addr,
+		apiKey,
 		grpc.WithPerRPCCredentials(&apiKeyCredentials{apiKey: apiKey}),
-		// for localhost
-		// grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(nil, "")),
-	}
+	)
+}
 
+func NewWithInsecureCredentials(addr, apiKey string) (Client, error) {
+	return NewWithOptions(
+		addr,
+		apiKey,
+		grpc.WithPerRPCCredentials(&apiKeyCredentials{apiKey: apiKey}),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+}
+
+func NewWithOptions(addr string, apiKey string, opts ...grpc.DialOption) (Client, error) {
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
 		return nil, err

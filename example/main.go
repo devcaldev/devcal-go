@@ -63,6 +63,16 @@ func main() {
 		}
 		printEvent(e)
 	}
+
+	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID()})
+	if err != nil {
+		log.Fatalf("could not update event: %v", err)
+	}
+
+	_, err = c.DeleteEvent(ctx, &rpc.DeleteEventParams{ID: e.GetID()})
+	if err != nil {
+		log.Fatalf("could not delete event: %v", err)
+	}
 }
 
 func printEvent(e *rpc.Event) {
