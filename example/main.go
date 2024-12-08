@@ -11,6 +11,7 @@ import (
 	client "github.com/devcaldev/devcal-go"
 	"github.com/devcaldev/devcal-go/rpc"
 	"github.com/teambition/rrule-go"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -32,8 +33,8 @@ func main() {
 	rr = "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,SU"
 
 	e, err := c.InsertEvent(ctx, &rpc.InsertEventParams{
-		Dtstart: time.Now().Format(time.RFC3339),
-		Dtend:   time.Now().Add(time.Hour).Format(time.RFC3339),
+		Dtstart: timestamppb.New(time.Now()),
+		Dtend:   timestamppb.New(time.Now().Add(time.Hour)),
 		Rrule:   &rr,
 	})
 	if err != nil {
@@ -49,7 +50,7 @@ func main() {
 	printEvent(e)
 	log.Println("---")
 
-	s, err := c.ListEvents(ctx, &rpc.ListEventsParams{Date: time.Now().Format(time.RFC3339), Period: "year"})
+	s, err := c.ListEvents(ctx, &rpc.ListEventsParams{Range: &rpc.ListEventsRange{Date: timestamppb.New(time.Now()), Period: "year"}})
 	if err != nil {
 		log.Fatalf("could not list events: %v", err)
 	}
@@ -69,7 +70,7 @@ func main() {
 		log.Fatalf("could not update event: %v", err)
 	}
 
-	s, err = c.FindEvents(ctx, &rpc.FindEventsParams{Props: []byte(`{"name":"x"}`)})
+	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: []byte(`{"name":"x"}`)})
 	if err != nil {
 		log.Fatalf("could not find events: %v", err)
 	}

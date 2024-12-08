@@ -9,13 +9,14 @@ import (
 
 	client "github.com/devcaldev/devcal-go"
 	"github.com/devcaldev/devcal-go/rpc"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // NOTE: local devcal server must be running
 // FIX ME: apiKey only available on local development machine and needs to be replaced whenever repo is cloned
 var (
 	addr   = "localhost:50051"
-	apiKey = "YWQ5I+5PbcUmIUNdb4oZ0EsqsjZ/9heZGMcQp0jLXNDLcqZj4AwIzCJ0T6HeqQqLsDj7v4AyDt3CC33J89wZFA=="
+	apiKey = "Gtr4D2lXzMy+oVS2Y2rrWyiDQ81tWM/cpD5EwvA9VJJtA7E1Tx1HnT1Moqbt36DYEcivCHDbeJi6GxhnPMuNxw=="
 )
 
 func TestNewWithInsecureCredentials(t *testing.T) {
@@ -31,8 +32,8 @@ func TestNewWithInsecureCredentials(t *testing.T) {
 	rr = "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,SU"
 
 	e, err := c.InsertEvent(ctx, &rpc.InsertEventParams{
-		Dtstart: time.Now().Format(time.RFC3339),
-		Dtend:   time.Now().Add(time.Hour).Format(time.RFC3339),
+		Dtstart: timestamppb.New(time.Now()),
+		Dtend:   timestamppb.New(time.Now().Add(time.Hour)),
 		Rrule:   &rr,
 	})
 	if err != nil {
@@ -48,7 +49,7 @@ func TestNewWithInsecureCredentials(t *testing.T) {
 	log.Println("Event", e)
 	log.Println("---")
 
-	s, err := c.ListEvents(ctx, &rpc.ListEventsParams{Date: time.Now().Format(time.RFC3339), Period: "year"})
+	s, err := c.ListEvents(ctx, &rpc.ListEventsParams{Range: &rpc.ListEventsRange{Date: timestamppb.New(time.Now()), Period: "year"}})
 	if err != nil {
 		t.Fatalf("could not list events: %v", err)
 	}
@@ -69,7 +70,7 @@ func TestNewWithInsecureCredentials(t *testing.T) {
 		t.Fatalf("could not update event: %v", err)
 	}
 
-	s, err = c.FindEvents(ctx, &rpc.FindEventsParams{Props: []byte(`{"name":"x"}`)})
+	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: []byte(`{"name":"x"}`)})
 	if err != nil {
 		t.Fatalf("could not find events: %v", err)
 	}

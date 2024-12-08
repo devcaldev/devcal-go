@@ -2,13 +2,10 @@ package client
 
 import (
 	"context"
-	"encoding/json"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/devcaldev/devcal-go/rpc"
 )
@@ -29,50 +26,8 @@ func (c *apiKeyCredentials) RequireTransportSecurity() bool {
 }
 
 type Client struct {
-	events rpc.EventsServiceClient
-	c      *grpc.ClientConn
-}
-
-type Event struct {
-	ID        string
-	AccountID string
-	Dtstart   time.Time
-	Dtend     time.Time
-	Rrule     string
-	Props     map[string]any
-}
-
-type InsertEventParams struct {
-	Dtstart time.Time
-	Dtend   time.Time
-	Rrule   string
-	Props   map[string]any
-}
-
-func (c *Client) InsertEvent(p *InsertEventParams) (*Event, error) {
-	rp := &rpc.InsertEventParams{
-		Dtstart: timestamppb.New(p.Dtstart),
-		Dtend:   timestamppb.New(p.Dtend),
-		Rrule:   &p.Rrule,
-	}
-	rp.Props, _ = json.Marshal(p.Props)
-
-	re, err := c.events.InsertEvent(
-		context.Background(),
-		rp,
-	)
-	if err != nil {
-		return nil, err
-	}
-	e := &Event{
-		ID:        re.ID,
-		AccountID: re.AccountID,
-		Dtstart:   re.Dtstart.AsTime(),
-		Dtend:     re.Dtend.AsTime(),
-		Rrule:     re.Rrule,
-	}
-	json.Unmarshal(re.Props, &e.Props)
-	return e, nil
+	rpc.EventsServiceClient
+	c *grpc.ClientConn
 }
 
 func (c *Client) Close() error {
@@ -104,8 +59,8 @@ func NewWithOptions(addr string, apiKey string, opts ...grpc.DialOption) (*Clien
 	}
 
 	c := &Client{
-		events: rpc.NewEventsServiceClient(conn),
-		c:      conn,
+		rpc.NewEventsServiceClient(conn),
+		conn,
 	}
 
 	return c, nil
