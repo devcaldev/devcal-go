@@ -2,21 +2,17 @@ package client_test
 
 import (
 	"context"
-	"io"
-	"log"
+	"reflect"
 	"testing"
 	"time"
 
 	client "github.com/devcaldev/devcal-go"
-	"github.com/devcaldev/devcal-go/rpc"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// NOTE: local devcal server must be running
-// FIX ME: apiKey only available on local development machine and needs to be replaced whenever repo is cloned
 var (
-	addr   = "localhost:50051"
+	// NOTE: local devcal server must be running
+	addr = "localhost:50051"
+	// NOTE: obtain test apiKey from local devcal server
 	apiKey = "Gtr4D2lXzMy+oVS2Y2rrWyiDQ81tWM/cpD5EwvA9VJJtA7E1Tx1HnT1Moqbt36DYEcivCHDbeJi6GxhnPMuNxw=="
 )
 
@@ -29,76 +25,77 @@ func TestNewWithInsecureCredentials(t *testing.T) {
 	}
 	defer c.Close()
 
-	var rr string
-	rr = "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,SU"
-
-	e, err := c.InsertEvent(ctx, &rpc.InsertEventParams{
-		Dtstart: timestamppb.New(time.Now()),
-		Dtend:   timestamppb.New(time.Now().Add(time.Hour)),
-		Rrule:   &rr,
+	dtstart := time.Now()
+	dtend := time.Now().Add(time.Hour)
+	e, err := c.InsertEvent(ctx, &client.InsertEventParams{
+		Dtstart: dtstart,
+		Dtend:   dtend,
+		Rrule:   "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,SU",
 	})
 	if err != nil {
-		t.Fatalf("could not insert event: %v", err)
+		t.Errorf("could not insert event: %v", err)
 	}
-	log.Println("Event", e)
-	log.Println("---")
-
-	e, err = c.GetEvent(ctx, &rpc.GetEventParams{ID: e.GetID()})
-	if err != nil {
-		t.Fatalf("could not get event: %v", err)
+	if e.ID == "" {
+		t.Error("inserted event has no id")
 	}
-	log.Println("Event", e)
-	log.Println("---")
-
-	s, err := c.ListEvents(ctx, &rpc.ListEventsParams{Range: &rpc.ListEventsRange{Date: timestamppb.New(time.Now()), Period: "year"}})
-	if err != nil {
-		t.Fatalf("could not list events: %v", err)
+	if e.AccountID == "" {
+		t.Error("inserted event has no account id")
 	}
-	for {
-		e, err := s.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.Fatalf("stream.Recv failed: %v", err)
-		}
-		log.Println("Event", e)
-		log.Println("---")
+	if !reflect.DeepEqual(e.Dtstart.UTC(), dtstart.UTC()) {
+		t.Error("inserted event dtstart not equal", e.Dtstart, dtstart)
 	}
-	p, err := structpb.NewStruct(map[string]any{"name": "x"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: p})
-	if err != nil {
-		t.Fatalf("could not update event: %v", err)
+	if !reflect.DeepEqual(e.Dtend.UTC(), dtend.UTC()) {
+		t.Error("inserted event dtend not equal", e.Dtend, dtend)
 	}
 
-	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: p})
+	e, err = c.GetEvent(ctx, &client.GetEventParams{ID: e.ID})
 	if err != nil {
-		t.Fatalf("could not find events: %v", err)
+		t.Errorf("could not get event: %v", err)
 	}
-	for {
-		e, err := s.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			t.Fatalf("stream.Recv failed: %v", err)
-		}
-		log.Println("Event", e)
-		log.Println("---")
+	if e.ID == "" {
+		t.Error("fetched event has no id")
+	}
+	if e.AccountID == "" {
+		t.Error("fetched event has no account id")
+	}
+	if !reflect.DeepEqual(e.Dtstart.UTC(), dtstart.UTC()) {
+		t.Error("fetched event dtstart not equal", e.Dtstart, dtstart)
+	}
+	if !reflect.DeepEqual(e.Dtend.UTC(), dtend.UTC()) {
+		t.Error("fetched event dtend not equal", e.Dtend, dtend)
 	}
 
-	e, err = c.GetEvent(ctx, &rpc.GetEventParams{ID: e.GetID()})
+	es, err := c.ListEvents(ctx, &client.ListEventsParams{Date: time.Now(), Period: "year"})
 	if err != nil {
-		t.Fatalf("could not get event: %v", err)
+		t.Errorf("could not list events: %v", err)
 	}
-	log.Println("Updated Event", e)
-	log.Println("---")
+	if len(es) == 0 {
+		t.Error("listed events for date range returned 0")
+	}
 
-	_, err = c.DeleteEvent(ctx, &rpc.DeleteEventParams{ID: e.GetID()})
+	err = c.UpdateEvent(ctx, &client.UpdateEventParams{ID: e.ID, Props: map[string]any{"name": "x"}})
 	if err != nil {
-		t.Fatalf("could not delete event: %v", err)
+		t.Errorf("could not update event: %v", err)
+	}
+
+	es, err = c.ListEvents(ctx, &client.ListEventsParams{Props: map[string]any{"name": "x"}})
+	if err != nil {
+		t.Errorf("could not find events: %v", err)
+	}
+	if len(es) == 0 {
+		t.Error("listed events for props returned 0")
+	}
+
+	e, err = c.GetEvent(ctx, &client.GetEventParams{ID: e.ID})
+	if err != nil {
+		t.Errorf("could not get event: %v", err)
+	}
+	if e.Props["name"] != "x" {
+		t.Error("updated event props does not have name = x")
+	}
+
+	err = c.DeleteEvent(ctx, &client.DeleteEventParams{ID: e.ID})
+	if err != nil {
+		t.Errorf("could not delete event: %v", err)
 	}
 }

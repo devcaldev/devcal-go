@@ -4,15 +4,11 @@ package main
 import (
 	"context"
 	"flag"
-	"io"
 	"log"
 	"time"
 
 	client "github.com/devcaldev/devcal-go"
-	"github.com/devcaldev/devcal-go/rpc"
 	"github.com/teambition/rrule-go"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -30,13 +26,10 @@ func main() {
 	}
 	defer c.Close()
 
-	var rr string
-	rr = "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,SU"
-
-	e, err := c.InsertEvent(ctx, &rpc.InsertEventParams{
-		Dtstart: timestamppb.New(time.Now()),
-		Dtend:   timestamppb.New(time.Now().Add(time.Hour)),
-		Rrule:   &rr,
+	e, err := c.InsertEvent(ctx, &client.InsertEventParams{
+		Dtstart: time.Now(),
+		Dtend:   time.Now().Add(time.Hour),
+		Rrule:   "FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,SU",
 	})
 	if err != nil {
 		log.Fatalf("could not insert event: %v", err)
@@ -44,64 +37,47 @@ func main() {
 	log.Println("Event", e)
 	log.Println("---")
 
-	e, err = c.GetEvent(ctx, &rpc.GetEventParams{ID: e.GetID()})
+	e, err = c.GetEvent(ctx, &client.GetEventParams{ID: e.ID})
 	if err != nil {
 		log.Fatalf("could not get event: %v", err)
 	}
 	printEvent(e)
 	log.Println("---")
 
-	s, err := c.ListEvents(ctx, &rpc.ListEventsParams{Range: &rpc.ListEventsRange{Date: timestamppb.New(time.Now()), Period: "year"}})
+	es, err := c.ListEvents(ctx, &client.ListEventsParams{Date: time.Now(), Period: "year"})
 	if err != nil {
 		log.Fatalf("could not list events: %v", err)
 	}
-	for {
-		e, err := s.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatalf("stream.Recv failed: %v", err)
-		}
+	for _, e := range es {
 		printEvent(e)
 	}
-	p, err := structpb.NewStruct(map[string]any{"name": "x"})
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: p})
+
+	err = c.UpdateEvent(ctx, &client.UpdateEventParams{ID: e.ID, Props: map[string]any{"name": "x"}})
 	if err != nil {
 		log.Fatalf("could not update event: %v", err)
 	}
 
-	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: p})
+	es, err = c.ListEvents(ctx, &client.ListEventsParams{Props: map[string]any{"name": "x"}})
 	if err != nil {
 		log.Fatalf("could not find events: %v", err)
 	}
-	for {
-		e, err := s.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatalf("stream.Recv failed: %v", err)
-		}
+	for _, e := range es {
 		printEvent(e)
 	}
 
-	_, err = c.DeleteEvent(ctx, &rpc.DeleteEventParams{ID: e.GetID()})
+	err = c.DeleteEvent(ctx, &client.DeleteEventParams{ID: e.ID})
 	if err != nil {
 		log.Fatalf("could not delete event: %v", err)
 	}
 }
 
-func printEvent(e *rpc.Event) {
-	if e.GetRrule() != "" {
-		r, err := rrule.StrToRRule(e.GetRrule() + ";DTSTART=" + e.GetDtstart().AsTime().UTC().Format(rrule.DateTimeFormat))
+func printEvent(e *client.Event) {
+	if e.Rrule != "" {
+		r, err := rrule.StrToRRule(e.Rrule + ";DTSTART=" + e.Dtstart.UTC().Format(rrule.DateTimeFormat))
 		if err != nil {
-			log.Fatalf("could not str to rrule: %v %s", err, e.GetRrule()+";DTSTART="+e.GetDtstart().AsTime().UTC().Format(rrule.DateTimeFormat))
+			log.Fatalf("could not str to rrule: %v %s", err, e.Rrule+";DTSTART="+e.Dtstart.UTC().Format(rrule.DateTimeFormat))
 		}
-		q := e.Dtstart.AsTime()
+		q := e.Dtstart
 
 		log.Println("Event:", e)
 		log.Println("Event Occurrences:", r.Between(
