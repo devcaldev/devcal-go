@@ -64,13 +64,13 @@ func TestNewWithInsecureCredentials(t *testing.T) {
 		log.Println("Event", e)
 		log.Println("---")
 	}
-
-	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: []byte(`{"name":"x"}`)})
+	p := `{"name":"x"}`
+	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: &p})
 	if err != nil {
 		t.Fatalf("could not update event: %v", err)
 	}
 
-	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: []byte(`{"name":"x"}`)})
+	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: &p})
 	if err != nil {
 		t.Fatalf("could not find events: %v", err)
 	}
