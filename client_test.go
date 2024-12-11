@@ -9,6 +9,7 @@ import (
 
 	client "github.com/devcaldev/devcal-go"
 	"github.com/devcaldev/devcal-go/rpc"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -64,13 +65,16 @@ func TestNewWithInsecureCredentials(t *testing.T) {
 		log.Println("Event", e)
 		log.Println("---")
 	}
-	p := `{"name":"x"}`
-	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: &p})
+	p, err := structpb.NewStruct(map[string]any{"name": "x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: p})
 	if err != nil {
 		t.Fatalf("could not update event: %v", err)
 	}
 
-	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: &p})
+	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: p})
 	if err != nil {
 		t.Fatalf("could not find events: %v", err)
 	}

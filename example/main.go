@@ -11,6 +11,7 @@ import (
 	client "github.com/devcaldev/devcal-go"
 	"github.com/devcaldev/devcal-go/rpc"
 	"github.com/teambition/rrule-go"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -64,13 +65,16 @@ func main() {
 		}
 		printEvent(e)
 	}
-	p := `{"name":"x"}`
-	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: &p})
+	p, err := structpb.NewStruct(map[string]any{"name": "x"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = c.UpdateEvent(ctx, &rpc.UpdateEventParams{ID: e.GetID(), Props: p})
 	if err != nil {
 		log.Fatalf("could not update event: %v", err)
 	}
 
-	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: &p})
+	s, err = c.ListEvents(ctx, &rpc.ListEventsParams{Props: p})
 	if err != nil {
 		log.Fatalf("could not find events: %v", err)
 	}
