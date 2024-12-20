@@ -29,47 +29,57 @@ func (c *apiKeyCredentials) RequireTransportSecurity() bool {
 	return c.requireTransportSecurity
 }
 
+// Client represents a client for interacting with the EventsService.
 type Client struct {
-	r rpc.EventsServiceClient
-	c *grpc.ClientConn
+	r rpc.EventsServiceClient // gRPC client for the EventsService.
+	c *grpc.ClientConn        // gRPC client connection.
 }
 
+// InsertEventParams holds parameters for inserting an event.
+// Rrule and Props fields are optional
 type InsertEventParams struct {
-	Dtstart time.Time
-	Dtend   time.Time
-	Rrule   string
-	Props   map[string]any
+	Dtstart time.Time      // Start time of the event.
+	Dtend   time.Time      // End time of the event.
+	Rrule   string         // Recurrence rule for the event.
+	Props   map[string]any // Additional properties of the event.
 }
 
+// GetEventParams holds parameters for retrieving an event.
 type GetEventParams struct {
-	ID string
+	ID string // Unique identifier of the event.
 }
 
+// ListEventsParams holds parameters for listing events.
+// Either Date and Period together, or Props, or all of them must be provided
 type ListEventsParams struct {
-	Date   time.Time
-	Period string
-	Props  map[string]any
+	Date   time.Time      // Date to filter events.
+	Period string         // Period to filter events.
+	Props  map[string]any // Additional properties to filter events.
 }
 
+// UpdateEventParams holds parameters for updating an event.
+// Except ID, all other fields are optional
 type UpdateEventParams struct {
-	ID      string
-	Dtstart time.Time
-	Dtend   time.Time
-	Rrule   string
-	Props   map[string]any
+	ID      string         // Unique identifier of the event.
+	Dtstart time.Time      // New start time of the event.
+	Dtend   time.Time      // New end time of the event.
+	Rrule   string         // New recurrence rule for the event.
+	Props   map[string]any // New additional properties of the event.
 }
 
+// DeleteEventParams holds parameters for deleting an event.
 type DeleteEventParams struct {
-	ID string
+	ID string // Unique identifier of the event.
 }
 
+// Event represents an event with its details.
 type Event struct {
-	ID        string
-	AccountID string
-	Dtstart   time.Time
-	Dtend     time.Time
-	Rrule     string
-	Props     map[string]any
+	ID        string         // Unique identifier of the event.
+	AccountID string         // Account ID associated with the event.
+	Dtstart   time.Time      // Start time of the event.
+	Dtend     time.Time      // End time of the event.
+	Rrule     string         // Recurrence rule for the event.
+	Props     map[string]any // Additional properties of the event.
 }
 
 func eventFromRpcEvent(re *rpc.Event) *Event {
@@ -83,6 +93,7 @@ func eventFromRpcEvent(re *rpc.Event) *Event {
 	}
 }
 
+// InsertEvent inserts a new event and returns the created event or an error.
 func (c *Client) InsertEvent(ctx context.Context, p *InsertEventParams) (e *Event, err error) {
 	rp := &rpc.InsertEventParams{
 		Dtstart: timestamppb.New(p.Dtstart),
@@ -106,6 +117,7 @@ func (c *Client) InsertEvent(ctx context.Context, p *InsertEventParams) (e *Even
 	return eventFromRpcEvent(re), nil
 }
 
+// GetEvent retrieves an event by ID and returns the event or an error.
 func (c *Client) GetEvent(ctx context.Context, p *GetEventParams) (e *Event, err error) {
 	rp := &rpc.GetEventParams{
 		ID: p.ID,
@@ -119,6 +131,7 @@ func (c *Client) GetEvent(ctx context.Context, p *GetEventParams) (e *Event, err
 	return eventFromRpcEvent(re), nil
 }
 
+// ListEvents lists events based on the provided parameters and returns a slice of events or an error.
 func (c *Client) ListEvents(ctx context.Context, p *ListEventsParams) (es []*Event, err error) {
 	rp := &rpc.ListEventsParams{}
 	if !p.Date.IsZero() && p.Period != "" {
@@ -150,6 +163,7 @@ func (c *Client) ListEvents(ctx context.Context, p *ListEventsParams) (es []*Eve
 	return es, nil
 }
 
+// UpdateEvent updates an existing event and returns an error if any.
 func (c *Client) UpdateEvent(ctx context.Context, p *UpdateEventParams) (err error) {
 	rp := &rpc.UpdateEventParams{
 		ID: p.ID,
@@ -175,6 +189,7 @@ func (c *Client) UpdateEvent(ctx context.Context, p *UpdateEventParams) (err err
 	return
 }
 
+// DeleteEvent deletes an event by ID and returns an error if any.
 func (c *Client) DeleteEvent(ctx context.Context, p *DeleteEventParams) (err error) {
 	rp := &rpc.DeleteEventParams{
 		ID: p.ID,
@@ -185,10 +200,12 @@ func (c *Client) DeleteEvent(ctx context.Context, p *DeleteEventParams) (err err
 	return
 }
 
+// Close closes the client connection.
 func (c *Client) Close() error {
 	return c.c.Close()
 }
 
+// New creates a new Client with secure credentials.
 func New(addr, apiKey string) (*Client, error) {
 	return NewWithOptions(
 		addr,
@@ -198,6 +215,7 @@ func New(addr, apiKey string) (*Client, error) {
 	)
 }
 
+// NewWithInsecureCredentials creates a new Client with insecure credentials.
 func NewWithInsecureCredentials(addr, apiKey string) (*Client, error) {
 	return NewWithOptions(
 		addr,
@@ -207,6 +225,7 @@ func NewWithInsecureCredentials(addr, apiKey string) (*Client, error) {
 	)
 }
 
+// NewWithOptions creates a new Client with the provided gRPC dial options.
 func NewWithOptions(addr string, apiKey string, opts ...grpc.DialOption) (*Client, error) {
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {
