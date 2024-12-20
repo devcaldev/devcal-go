@@ -1,3 +1,5 @@
+// NOTE: local devcal server must be running and db/sql/seed.sql executed
+
 package client_test
 
 import (
@@ -10,10 +12,8 @@ import (
 )
 
 var (
-	// NOTE: local devcal server must be running
-	addr = "localhost:50051"
-	// NOTE: obtain test apiKey from local devcal server
-	apiKey = "Gtr4D2lXzMy+oVS2Y2rrWyiDQ81tWM/cpD5EwvA9VJJtA7E1Tx1HnT1Moqbt36DYEcivCHDbeJi6GxhnPMuNxw=="
+	addr   = "localhost:50051"
+	apiKey = "9fSBhI9PysfJpAdvdo7QO50J6lWunEvSi4TP0Uv3GbcXjyYi7DrZO4aNDCC+cYtTsEi5ZKyArajVml4nZlSEVg=="
 )
 
 func TestNewWithInsecureCredentials(t *testing.T) {
