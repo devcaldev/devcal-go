@@ -38,54 +38,54 @@ type Client struct {
 // InsertEventParams holds parameters for inserting an event.
 // Rrule and Props fields are optional
 type InsertEventParams struct {
-	Dtstart time.Time      // Start time of the event.
-	Dtend   time.Time      // End time of the event.
-	Rrule   string         // Recurrence rule for the event.
-	Props   map[string]any // Additional properties of the event.
+	Dtstart time.Time      `json:"dtstart"`         // Start time of the event.
+	Dtend   time.Time      `json:"dtend"`           // End time of the event.
+	Rrule   string         `json:"rrule,omitempty"` // Recurrence rule for the event.
+	Props   map[string]any `json:"props,omitempty"` // Additional properties of the event.
 }
 
 // GetEventParams holds parameters for retrieving an event.
 type GetEventParams struct {
-	ID string // Unique identifier of the event.
+	ID string `json:"id"` // Unique identifier of the event.
 }
 
 // ListEventsParams holds parameters for listing events.
 // Either Date and Period together, or Props, or all of them must be provided
 type ListEventsParams struct {
-	Date   time.Time      // Date to filter events.
-	Period string         // Period to filter events.
-	Props  map[string]any // Additional properties to filter events.
+	Date   time.Time      `json:"date,omitempty"`   // Date to filter events.
+	Period string         `json:"period,omitempty"` // Period to filter events.
+	Props  map[string]any `json:"props,omitempty"`  // Additional properties to filter events.
 }
 
 // UpdateEventParams holds parameters for updating an event.
 // Except ID, all other fields are optional
 type UpdateEventParams struct {
-	ID      string         // Unique identifier of the event.
-	Dtstart time.Time      // New start time of the event.
-	Dtend   time.Time      // New end time of the event.
-	Rrule   string         // New recurrence rule for the event.
-	Props   map[string]any // New additional properties of the event.
+	ID      string         `json:"id"`                // Unique identifier of the event.
+	Dtstart time.Time      `json:"dtstart,omitempty"` // New start time of the event.
+	Dtend   time.Time      `json:"dtend,omitempty"`   // New end time of the event.
+	Rrule   string         `json:"rrule,omitempty"`   // New recurrence rule for the event.
+	Props   map[string]any `json:"props,omitempty"`   // New additional properties of the event.
 }
 
 // DeleteEventParams holds parameters for deleting an event.
 type DeleteEventParams struct {
-	ID string // Unique identifier of the event.
+	ID string `json:"id"` // Unique identifier of the event.
 }
 
 // Event represents an event with its details.
 type Event struct {
-	ID        string         // Unique identifier of the event.
-	AccountID string         // Account ID associated with the event.
-	Dtstart   time.Time      // Start time of the event.
-	Dtend     time.Time      // End time of the event.
-	Rrule     string         // Recurrence rule for the event.
-	Props     map[string]any // Additional properties of the event.
+	ID        string         `json:"id"`         // Unique identifier of the event.
+	AccountID string         `json:"account_id"` // Account ID associated with the event.
+	Dtstart   time.Time      `json:"dtstart"`    // Start time of the event.
+	Dtend     time.Time      `json:"dtend"`      // End time of the event.
+	Rrule     string         `json:"rrule"`      // Recurrence rule for the event.
+	Props     map[string]any `json:"props"`      // Additional properties of the event.
 }
 
 func eventFromRpcEvent(re *rpc.Event) *Event {
 	return &Event{
-		ID:        re.GetID(),
-		AccountID: re.GetAccountID(),
+		ID:        re.GetId(),
+		AccountID: re.GetAccountId(),
 		Dtstart:   re.GetDtstart().AsTime(),
 		Dtend:     re.GetDtend().AsTime(),
 		Rrule:     re.GetRrule(),
@@ -120,7 +120,7 @@ func (c *Client) InsertEvent(ctx context.Context, p *InsertEventParams) (e *Even
 // GetEvent retrieves an event by ID and returns the event or an error.
 func (c *Client) GetEvent(ctx context.Context, p *GetEventParams) (e *Event, err error) {
 	rp := &rpc.GetEventParams{
-		ID: p.ID,
+		Id: p.ID,
 	}
 
 	re, err := c.r.GetEvent(ctx, rp)
@@ -166,7 +166,7 @@ func (c *Client) ListEvents(ctx context.Context, p *ListEventsParams) (es []*Eve
 // UpdateEvent updates an existing event and returns an error if any.
 func (c *Client) UpdateEvent(ctx context.Context, p *UpdateEventParams) (err error) {
 	rp := &rpc.UpdateEventParams{
-		ID: p.ID,
+		Id: p.ID,
 	}
 	if !p.Dtstart.IsZero() {
 		rp.Dtstart = timestamppb.New(p.Dtstart)
@@ -192,7 +192,7 @@ func (c *Client) UpdateEvent(ctx context.Context, p *UpdateEventParams) (err err
 // DeleteEvent deletes an event by ID and returns an error if any.
 func (c *Client) DeleteEvent(ctx context.Context, p *DeleteEventParams) (err error) {
 	rp := &rpc.DeleteEventParams{
-		ID: p.ID,
+		Id: p.ID,
 	}
 
 	_, err = c.r.DeleteEvent(ctx, rp)
